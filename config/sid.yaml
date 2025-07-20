@@ -15,8 +15,10 @@ datasets:
     data_args:
       datatype: mc
       dataroot:
-        lq: /mnt/lustre/zhangyi1.vendor/data/Sony/pair_LH0.04s/input_crops/
-        gt: /mnt/lustre/zhangyi1.vendor/data/Sony/pair_LH0.04s/target_crops/
+        lq: /data/UCDIR/Sony/test_LH0.04s/input/
+        gt: /data/UCDIR/Sony/test_LH0.04s/target/
+        # lq: /mnt/lustre/zhangyi1.vendor/data/Sony/pair_LH0.04s/input_crops/
+        # gt: /mnt/lustre/zhangyi1.vendor/data/Sony/pair_LH0.04s/target_crops/
       crop_size: 256
     dataroot: test
     batch_size: 32
@@ -28,8 +30,8 @@ datasets:
     data_args:
       datatype: img
       dataroot:
-        lq: ./dataset/Sony/test_LH0.04s/input/
-        gt: ./dataset/Sony/test_LH0.04s/target/
+        lq: /data/UCDIR/Sony/test_LH0.04s/input/
+        gt: /data/UCDIR/Sony/test_LH0.04s/target/
       data_len: -1 # 2
       split: val
     mode: LRHR
