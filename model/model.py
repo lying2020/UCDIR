@@ -40,17 +40,23 @@ class DDPM(BaseModel):
         temp_model = networks.define_G(opt)
         self.netG = self.set_device(temp_model)
         # print('** current', torch.cuda.current_device())
-        self.netG = nn.parallel.DistributedDataParallel(self.netG, device_ids=[torch.cuda.current_device()],
-                                                        output_device=opt['rank'], find_unused_parameters=False)
+        
+        # Check if distributed training is enabled
+        if opt.get('distributed', True):
+            self.netG = nn.parallel.DistributedDataParallel(self.netG, device_ids=[torch.cuda.current_device()],
+                                                            output_device=opt['rank'], find_unused_parameters=False)
+        else:
+            print("Using single GPU mode")
         self.schedule_phase = None
 
         ema_scheduler = opt['train']['ema_scheduler'].get('use', False)
         if ema_scheduler:
             self.ema_scheduler = opt['train']['ema_scheduler']
             self.netG_EMA = copy.deepcopy(temp_model)
-            self.netG_EMA = nn.parallel.DistributedDataParallel(self.set_device(self.netG_EMA),
-                                                                device_ids=[torch.cuda.current_device()],
-                                                                output_device=opt['rank'], find_unused_parameters=False)
+            if opt.get('distributed', True):
+                self.netG_EMA = nn.parallel.DistributedDataParallel(self.set_device(self.netG_EMA),
+                                                                    device_ids=[torch.cuda.current_device()],
+                                                                    output_device=opt['rank'], find_unused_parameters=False)
             self.EMA = EMA(beta=self.ema_scheduler['ema_decay'])
         else:
             self.ema_scheduler = None

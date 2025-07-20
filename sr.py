@@ -319,34 +319,37 @@ def ddim_sampling(opt, val_loader, diffusion):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('-c', '--config', type=str, default='config/sr_sr3_16_128.json',
+    parser.add_argument('-c', '--config', type=str, default='config/sid.yaml',
                         help='JSON file for configuration')
     parser.add_argument('-p', '--phase', type=str, choices=['train', 'val'],
-                        help='Run either train(training) or val(generation)', default='train')
+                        help='Run either train(training) or val(generation)', default='val')
     parser.add_argument('-gpu', '--gpu_ids', type=str, default=None)
     parser.add_argument('-debug', '-d', action='store_true')
     parser.add_argument('-enable_wandb', action='store_true')
     parser.add_argument('-log_wandb_ckpt', action='store_true')
     parser.add_argument('-log_eval', action='store_true')
     parser.add_argument('--local_rank', type=int, default=0)
-    parser.add_argument('-launcher', default='slurm')
+    parser.add_argument('-launcher', default='pytorch')
 
-    parser.add_argument('--checkpoint', type=str, default=None)
+    parser.add_argument('--checkpoint', type=str, default="experiments/sid/checkpoint/I_Elatest")
 
 
     # parse configs
     args = parser.parse_args()
-    # init dist first
+    
+    # init dist first - handle single GPU case
     try:
         init_dist(args.launcher, backend='nccl')
-    except:
-        init_dist(args.launcher, backend='nccl')
-
-    opt = Logger.parse(args)
-    # Convert to NoneDict, which return None for missing key.
-    opt = Logger.dict_to_nonedict(opt)
-
-    opt['rank'], opt['world_size'] = get_dist_info()
+        opt['rank'], opt['world_size'] = get_dist_info()
+    except Exception as e:
+        print(f"Warning: Distributed initialization failed ({e}), using single GPU mode")
+        # Set default values for single GPU
+        opt = Logger.parse(args)
+        opt = Logger.dict_to_nonedict(opt)
+        opt['rank'] = 0
+        opt['world_size'] = 1
+        # Disable distributed features
+        opt['distributed'] = False
 
     # logging
     torch.backends.cudnn.enabled = True
@@ -486,10 +489,10 @@ if __name__ == "__main__":
                         })
                         val_step += 1
 
-                if current_step % opt['train']['save_models'] == 0 and opt['rank'] == 0:
+                if current_step % opt['train']['save_models'] == 0 and (opt['rank'] == 0 or not opt.get('distributed', True)):
                     diffusion.save_network(current_epoch, current_step)
 
-                if current_step % opt['train']['save_checkpoint_freq'] == 0 and opt['rank'] == 0:
+                if current_step % opt['train']['save_checkpoint_freq'] == 0 and (opt['rank'] == 0 or not opt.get('distributed', True)):
                     logger.info('Saving models and training states.')
                     # diffusion.save_network(current_epoch, current_step)
                     diffusion.save_network('latest', '')

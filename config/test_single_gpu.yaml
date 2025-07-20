@@ -1,0 +1,76 @@
+name: test_single_gpu
+phase: val
+gpu_ids:
+  - 0
+path:
+  log: logs
+  tb_logger: tb_logger
+  results: results
+  checkpoint: checkpoint
+  resume_state: null
+datasets:
+  train:
+    name: TestDataset
+    datasetname: PairDataset
+    data_args:
+      datatype: img
+      dataroot:
+        lq: ./dataset/celebahq_16_128/lr_16/
+        gt: ./dataset/celebahq_16_128/hr_128/
+      data_len: 2  # 只测试2张图片
+      split: train
+    mode: LRHR
+    dataroot: test
+    batch_size: 1
+    num_workers: 1
+    use_shuffle: true
+  val:
+    name: TestDataset
+    datasetname: PairDataset
+    data_args:
+      datatype: img
+      dataroot:
+        lq: ./dataset/celebahq_16_128/lr_16/
+        gt: ./dataset/celebahq_16_128/hr_128/
+      data_len: 2  # 只测试2张图片
+      split: val
+    mode: LRHR
+    dataroot: test
+model:
+  which_model_G: ucdir
+  unet_name: DY3h
+  diffusion_name: ResiGaussianGuideDY
+  finetune_norm: false
+  unet:
+    in_channel: 6
+    out_channel: 3
+    inner_channel: 32  # 减小模型大小用于测试
+    channel_mults:
+      - 1
+      - 2
+    attn_res:
+      - 16
+    res_blocks: 1
+    dropout: 0.1
+    norm_groups: 1
+  beta_schedule:
+    val:
+      schedule: linear
+      n_timestep: 10  # 减少步数用于测试
+      linear_start: 0.000001
+      linear_end: 0.1
+  diffusion:
+    image_size: 128
+    channels: 3
+    conditional: true
+train:
+  n_iter: 1000
+  val_freq: 100
+  save_checkpoint_freq: 100
+  save_models: 1000
+  print_freq: 100
+  optimizer:
+    type: adamw
+    lr: 0.0001
+  ema_scheduler:
+    use: false  # 关闭EMA用于测试 
