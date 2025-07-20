@@ -9,7 +9,12 @@ from tqdm import tqdm
 import logging
 
 logger = logging.getLogger('base')
-import lpips
+try:
+    import lpips
+    LPIPS_AVAILABLE = True
+except ImportError:
+    logger.warning("LPIPS not available. Perceptual loss will be disabled.")
+    LPIPS_AVAILABLE = False
 
 
 def _warmup_beta(linear_start, linear_end, n_timestep, warmup_frac):

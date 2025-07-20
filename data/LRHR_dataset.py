@@ -13,11 +13,14 @@ import numpy as np
 
 from data.mask import bbox2mask, brush_stroke_mask, get_irregular_mask, random_bbox, random_cropping_bbox
 
+# Memcached support (optional)
+MC_AVAILABLE = False
 try:
     import mc
-except:
-    print('** import mc error')
-    pass
+    MC_AVAILABLE = True
+except ImportError:
+    print('** Memcached not available, using local file system')
+    MC_AVAILABLE = False
 
 
 def pil_loader(img_str):
@@ -57,6 +60,17 @@ class MemcachedBase(Dataset):
             filename = self.ceph_rename(filename)
             return self.ceph_load(filename, flag, self.ceph)
 
+        # Check if memcached is available
+        if not MC_AVAILABLE:
+            # Fallback to direct file loading
+            if flag == 'gray':
+                img = cv2.imread(filename, cv2.IMREAD_GRAYSCALE)
+                img = np.expand_dims(img, axis=2)
+            else:
+                img = Image.open(filename).convert("RGB")
+            return img
+
+        # Use memcached if available
         self._init_memcached()
         value = mc.pyvector()
         self.mclient.Get(filename, value)

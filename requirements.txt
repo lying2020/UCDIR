@@ -1,2 +1,4 @@
 lpips
 clean-fid
+omegaconf
+mc

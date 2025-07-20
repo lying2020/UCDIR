@@ -529,10 +529,19 @@ if __name__ == "__main__":
 
             hr_img = Metrics.tensor2img(visuals['HR'])  # uint8
             lr_img = Metrics.tensor2img(visuals['LR'])  # uint8
-            if hasattr(diffusion.netG.module, 'pre_initx'):
-                fake_img = Metrics.tensor2img(diffusion.netG.module.pre_initx.detach().float().cpu())  # uint8
+            # Handle both distributed and single GPU modes
+            if hasattr(diffusion.netG, 'module'):
+                # Distributed mode
+                if hasattr(diffusion.netG.module, 'pre_initx'):
+                    fake_img = Metrics.tensor2img(diffusion.netG.module.pre_initx.detach().float().cpu())  # uint8
+                else:
+                    fake_img = Metrics.tensor2img(visuals['INF'])  # uint8
             else:
-                fake_img = Metrics.tensor2img(visuals['INF'])  # uint8
+                # Single GPU mode
+                if hasattr(diffusion.netG, 'pre_initx'):
+                    fake_img = Metrics.tensor2img(diffusion.netG.pre_initx.detach().float().cpu())  # uint8
+                else:
+                    fake_img = Metrics.tensor2img(visuals['INF'])  # uint8
 
             sr_img_mode = 'grid'
             if sr_img_mode == 'single':
