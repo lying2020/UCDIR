@@ -203,7 +203,7 @@ class CephLoad(object):
 
     def get_stream(self, path):
         url = self.ceph_rename(path)
-        # print(url, path, 'get')
+        print(url, path, 'get')
         value = self.ceph.get(url)
         value_buf = io.BytesIO(value)
         value_buf.seek(0)
